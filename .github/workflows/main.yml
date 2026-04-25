@@ -2,24 +2,29 @@ name: Criar APK NIEL IPTV
 on: [push, workflow_dispatch]
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - name: Instalar
+      - name: Instalar Dependencias
         run: |
           sudo apt update
           sudo apt install -y python3-pip build-essential git libncurses5 libncurses5-dev libncursesw5-dev libzip-dev zlib1g-dev libffi-dev libssl-dev openjdk-17-jdk autoconf automake libtool
+          pip install --upgrade pip
           pip install buildozer cython==0.29.33
-      - name: Build
+      - name: Build APK
         run: |
           rm -f buildozer.spec
           buildozer init
+          # Ajustes essenciais
           sed -i 's/package.name = myapp/package.name = nieliptv/' buildozer.spec
           sed -i 's/title = My Application/title = NIEL IPTV/' buildozer.spec
+          # Força o uso de ferramentas que o GitHub já tem
           sed -i 's/android.api = 31/android.api = 30/' buildozer.spec
           sed -i 's/# android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+          
           export APP_ALLOW_ROOT=1
-          yes | buildozer -v android debug
+          # O comando abaixo aceita tudo e ignora erros de download tentando novamente
+          yes | buildozer -v android debug || yes | buildozer -v android debug
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
