@@ -1,0 +1,45 @@
+name: Criar APK NIEL IPTV
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Ferramentas de Compilacao
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip build-essential git libncurses5 libncurses5-dev libncursesw5-dev libzip-dev zlib1g-dev libffi-dev libssl-dev openjdk-17-jdk autoconf automake libtool pkg-config cmake
+          pip install --upgrade pip
+          pip install "cython<3.0.0" buildozer kivymd
+
+      - name: Criar APK NIEL PREMIUM
+        run: |
+          # Garante que comecamos sem arquivos de configuracao antigos
+          rm -f buildozer.spec
+          buildozer init
+          
+          # Configura Nome e Pacote
+          sed -i 's/package.name = myapp/package.name = nieliptv/' buildozer.spec
+          sed -i 's/title = My Application/title = NIEL IPTV PREMIUM/' buildozer.spec
+          
+          # Permissoes de Internet (Obrigatorio para IPTV)
+          sed -i 's/# android.permissions = INTERNET/android.permissions = INTERNET,ACCESS_NETWORK_STATE/' buildozer.spec
+          
+          # Ajuste de Versao para Android 11
+          sed -i 's/android.api = 31/android.api = 30/' buildozer.spec
+          
+          # Requisitos de Bibliotecas
+          sed -i 's/requirements = python3,kivy/requirements = python3,kivy==2.2.1,kivymd,jnius,pillow,requests/' buildozer.spec
+          
+          # Aceitar Licencas do Google Automaticamente
+          sed -i 's/# android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+          
+          export APP_ALLOW_ROOT=1
+          yes | buildozer -v android debug
+
+      - name: Disponibilizar APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIEL-IPTV-APK
+          path: bin/*.apk
